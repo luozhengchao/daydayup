@@ -63,7 +63,7 @@ public class Sort {
 
     private static void subSort(int[] arr, int[] temp, int left, int right) {
         if (left < right){
-            int mid = (left + right) / 2;
+            int mid = (left + right) >> 1;
             //左边排序
             subSort(arr, temp, left, mid);
             //右边排序
@@ -92,7 +92,7 @@ public class Sort {
         while (i <= mid && j <= right){
             temp[k++] = arr[i] <= arr[j] ? arr[i++] : arr[j++];
         }
-        //把左边填入
+        //把左边填入,只会有一个越界
         while (i <= mid){
             temp[k++] = arr[i++];
         }
