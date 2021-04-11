@@ -43,7 +43,7 @@ class Solution20 {
 
 /**
  * 84. 柱状图中最大的矩形
- *1、暴力：依次遍历柱形的高度，对于每一个高度分别向两边扩散，求出以当前高度为矩形的最大宽度多少。
+ * 1、暴力：依次遍历柱形的高度，对于每一个高度分别向两边扩散，求出以当前高度为矩形的最大宽度多少。
  */
 class Solution84 {
 
@@ -100,6 +100,7 @@ class Solution242 {
 class Solution49 {
     /**
      * 注意 groupingBy 算子计算完以后，返回的是一个 Map<String, List<String>>，map 的键是每种排序后的字符串，值是聚合的原始字符串，我们只关心值，所以我们最后 new ArrayList<>(map.values())
+     *
      * @param strs
      * @return
      */
@@ -130,6 +131,52 @@ class Solution1 {
             map.put(nums[i], i);
         }
         return null;
+    }
+}
+
+/**
+ * 142. 环形链表 II
+ */
+class Solution142 {
+    public ListNode detectCycle(ListNode head) {
+        //快慢指针
+        //每次移动两步,有环则一定会在环的 某一个位置 超越慢指针
+        ListNode fast = head, slow = head;
+        while (true) {
+            if (fast == null || fast.next == null) return null;
+            fast = fast.next.next;
+            slow = slow.next;
+            if (fast == slow) break;
+        }
+        // 假如fast == head --> 有环
+        fast = head;
+        while (fast != slow) {
+            fast = fast.next;
+            slow = slow.next;
+        }
+        return fast;
+    }
+}
+
+/**
+ * 反转链表
+ */
+class Solution206 {
+    public ListNode reverseList(ListNode head) {
+        //双指针实现
+        ListNode per = null;
+        ListNode cur = head;
+        ListNode temp = null;
+        while(cur != null){
+            //存储下一个节点
+            temp = cur.next;
+            //改变指向
+            cur.next = per;
+            //调整指针指向
+            per = cur;
+            cur = temp;
+        }
+        return per;
     }
 }
 
