@@ -2,7 +2,7 @@
 
 #### 1、递归
 
-```
+```java
    public void recur(int level, int param){
         //跳出判断
         if(level > MAX){
