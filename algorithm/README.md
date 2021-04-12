@@ -1,6 +1,4 @@
-# 一、 数据结构
-
-### 1、**常见运算**
+# 一、**常见运算**
 
 ```java
 //取模运算:余数,可以用作循环
@@ -12,7 +10,7 @@ i++ //输出后再加
 
 
 
-### 2、**数组、链表、跳表**
+# 二、**数组、链表、跳表**
 
 * 原始数组
 
@@ -59,7 +57,7 @@ i++ //输出后再加
 
   * 升维：增加多级索引Olog(n)；随着增加删除索引索引可能需要重建，空间复杂度O(n)
 
-####解题模板
+##1、解题模板
 
 * 遍历
 
@@ -86,7 +84,7 @@ i++ //输出后再加
 
 
 
-#### 力扣刷题
+## 2、力扣刷题
 
 #### [146. LRU 缓存机制](https://leetcode-cn.com/problems/lru-cache/)
 
@@ -229,6 +227,27 @@ public class Solution {
 }
 ```
 
+#### [面试题 02.07. 链表相交](https://leetcode-cn.com/problems/intersection-of-two-linked-lists-lcci/)
+
+*给定两个（单向）链表，判定它们是否相交并返回交点*
+
+* **解题思路**
+
+  * 双指针(快慢指针，前后指针)
+
+    ```java
+    public ListNode getIntersectionNode(ListNode headA, ListNode headB) {
+      //双指针:a和b以相同的速度走过相同的路程，如果最后一段路程相同则他们必然在共同路程的入口相遇；
+      ListNode a = headA;
+      ListNode b = headB;
+      while(a != b){
+        a = a == null ? headB : a.next;
+        b = b == null ? headA : b.next;
+      }
+      return a;
+    }
+    ```
+
 #### [206. 反转链表](https://leetcode-cn.com/problems/reverse-linked-list/)
 
 * **解题思路**
@@ -289,7 +308,7 @@ public boolean hasCycle(ListNode head) {
 public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
         //迭代法
         ListNode head = new ListNode(-1);
-        //维护一个指针
+        //维护一个指针，一直指向链表的最后一个位置
         ListNode per = head;
         while(l1 != null && l2 != null){
             if(l1.val >= l2.val){
@@ -312,7 +331,7 @@ public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
 
 ```java
 public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
-        //递归解法
+        //递归解法，较小的节点指向其余待合并元素
         if(l1 == null) return l2;
         if(l2 == null) return l1;
 
@@ -326,3 +345,157 @@ public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
 }
 ```
 
+
+
+# 三、树、二叉树、二叉搜索树
+
+## 1、 解题模板
+
+*  遍历
+
+```java
+/* 基本的二叉树节点 */
+class TreeNode {
+    int val;
+    TreeNode left, right;
+}
+void traverse(TreeNode root) {
+    traverse(root.left);
+    traverse(root.right);
+}
+```
+
+* N叉树遍历
+
+```java
+/* 基本的 N 叉树节点 */
+class TreeNode {
+    int val;
+    TreeNode[] children;
+}
+void traverse(TreeNode root) {
+    for (TreeNode child : root.children)
+        traverse(child);
+}
+```
+
+## 2、力扣刷题
+
+#### [94. 二叉树的中序遍历](https://leetcode-cn.com/problems/binary-tree-inorder-traversal/)
+
+*给定一个二叉树的根节点 `root` ，返回它的 **中序** 遍历。*
+
+* 解题思路:递归求解
+
+  ```java
+  class Solution {
+      public List<Integer> inorderTraversal(TreeNode root) {
+         List<Integer> res = new ArrayList();
+         order(root, res);
+         return res;
+      }
+  
+      private void order(TreeNode root, List<Integer> res){
+          //中序遍历 做根右
+          if(null == root) return;
+          order(root.left, res);
+          res.add(root.val);
+          order(root.right, res);
+      }
+  }
+  ```
+
+  
+
+#### [590. N 叉树的后序遍历](https://leetcode-cn.com/problems/n-ary-tree-postorder-traversal/)
+
+*给定一个 N 叉树，返回其节点值的 **后序遍历** 。*
+
+*N 叉树 在输入中按层序遍历进行序列化表示，每组子节点由空值 `null` 分隔（请参见示例）。*
+
+* **解题思路**
+
+  ```java
+  class Solution {
+      public List<Integer> postorder(Node root) {
+         List<Integer> res = new ArrayList();
+         inOrder(root, res);
+         return res;
+      }
+  		
+      private void inOrder(Node node, List<Integer> res){
+          if(null == node) return;
+        	//遍历孩子节点
+          for(Node n : node.children){
+              inOrder(n, res);
+          }
+          res.add(node.val);
+      }
+  }
+  ```
+
+  
+
+#### [429. N 叉树的层序遍历](https://leetcode-cn.com/problems/n-ary-tree-level-order-traversal/)
+
+*给定一个 N 叉树，返回其节点值的层序遍历。（即从左到右，逐层遍历）*
+
+* 解题思路
+
+  ```java
+  class Solution {
+      public List<List<Integer>> levelOrder(Node root) {
+          List<List<Integer>> res = new ArrayList();
+          if(root == null) return res;
+          inOrder(root, res, 0);
+          return res;
+      }
+      
+      private void inOrder(Node root,List<List<Integer>> res, int level){
+          if(root == null) return;
+          //遍历当前层
+          if(res.size() < level + 1){
+              res.add(new ArrayList()); //防止下标越界
+          }
+          res.get(level).add(root.val);       
+          for(Node n : root.children){
+              inOrder(n, res, level + 1);//注意不能是level++
+          }      
+      }
+  }
+  ```
+
+  
+
+#### [226. 翻转二叉树](https://leetcode-cn.com/problems/invert-binary-tree/)
+
+* 解题思路
+
+  ```java
+  class Solution {
+      public TreeNode invertTree(TreeNode root) {
+        	//递归终止条件  
+        	if(null == root) return root;
+        	//当前层逻辑：位置交换  
+        	TreeNode temp = root.left;
+          root.left = root.right;
+          root.right = temp;
+        	//下探一层
+          invertTree(root.left);
+          invertTree(root.right);
+          return root;
+      }
+  }
+  ```
+
+  
+
+# 四、**栈、队列、优先队列、双端队列**
+
+## 1、解题模板
+
+## 2、力扣刷题
+
+
+
+# 五、**哈希表、映射、集合**
