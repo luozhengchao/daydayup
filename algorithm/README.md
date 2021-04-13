@@ -492,7 +492,54 @@ void traverse(TreeNode root) {
   }
   ```
 
-  
+
+
+
+#### [98. 验证二叉搜索树](https://leetcode-cn.com/problems/validate-binary-search-tree/)
+
+* 解题思路
+  * 采用中序遍历，指针移动
+
+```java
+class Solution {
+    long per = Long.MIN_VALUE;//注意
+    public boolean isValidBST(TreeNode root) {
+        //根据中序遍历的特点（左，根，右）--》前一个节点小于后一个节点
+        if(root == null) return true;
+        //左节点
+        if(!isValidBST(root.left)){
+            return false;
+        }
+        //根节点处理,左要小于根
+        if(per >= root.val){
+            return false;
+        }
+        //记录前节点
+        per = root.val;
+        //右节点
+        return isValidBST(root.right);
+    }
+}
+```
+
+
+
+#### [104. 二叉树的最大深度](https://leetcode-cn.com/problems/maximum-depth-of-binary-tree/)
+
+*  解题思路：DFS深度优先搜索
+  * 节点为空时说明高度为 0，所以返回 0；节点不为空时则分别求左右子树的高度的最大值，同时加1表示当前节点的高度，返回该数值
+
+```java
+class Solution {
+    //深度优先搜索
+    public int maxDepth(TreeNode root) {
+        if(root == null) return 0;
+        return Math.max(maxDepth(root.left), maxDepth(root.right)) + 1;
+    }
+}
+```
+
+
 
 ## 四、**栈、队列**
 
