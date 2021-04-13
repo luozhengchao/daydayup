@@ -512,6 +512,12 @@ void traverse(TreeNode root) {
 
 ### 1、常用思路
 
+* Volatile 可见性，自旋锁等待；（类似于等待通知）
+
+* 锁资源:synchronized + wait/notify; lock + condition + await/singal
+* CountDownLatch/CyclicBarrier(循环场景)/Semahphore
+* 阻塞队列BlockingQueue: put/take
+
 ### 2、力扣刷题
 
 #### [1114. 按序打印](https://leetcode-cn.com/problems/print-in-order/)
@@ -731,6 +737,274 @@ class Foo {
     public void third(Runnable printThird) throws InterruptedException {
         sb.acquire();
         printThird.run();
+    }
+}
+```
+
+* 阻塞队列
+
+  ```java
+  class Foo {
+      BlockingQueue<String> blockingQueue12, blockingQueue23;
+  
+      public Foo() {
+          //同步队列,没有容量，进去一个元素，必须等待取出来以后，才能再往里面放一个元素
+          blockingQueue12 = new SynchronousQueue<>();
+          blockingQueue23 = new SynchronousQueue<>();
+      }
+  
+      public void first(Runnable printFirst) throws InterruptedException {
+          printFirst.run();
+          blockingQueue12.put("stop");
+      }
+  
+      public void second(Runnable printSecond) throws InterruptedException {
+          blockingQueue12.take();
+          printSecond.run();
+          blockingQueue23.put("stop");
+      }
+  
+      public void third(Runnable printThird) throws InterruptedException {
+          blockingQueue23.take();
+          printThird.run();
+      }
+  }
+  ```
+
+  
+
+#### [1115. 交替打印FooBar](https://leetcode-cn.com/problems/print-foobar-alternately/)
+
+* Semaphore
+  在该场景下有点类似红绿灯交替变换的情境，因此信号量成了首选思路：
+
+```java
+class FooBar {
+    private int n;
+    public FooBar(int n) {
+        this.n = n;
+    }
+    Semaphore foo = new Semaphore(1);
+    Semaphore bar = new Semaphore(0);
+
+    public void foo(Runnable printFoo) throws InterruptedException {
+        for (int i = 0; i < n; i++) {
+            foo.acquire();
+            printFoo.run();
+            bar.release();
+        }
+    }
+
+    public void bar(Runnable printBar) throws InterruptedException {
+        for (int i = 0; i < n; i++) {
+            bar.acquire();
+            printBar.run();
+            foo.release();
+        }
+    }
+}
+```
+
+
+* Lock（公平锁）
+  公平锁也是实现交替执行一个不错的选择：
+
+```java
+class FooBar {
+    private int n;
+    public FooBar(int n) {
+        this.n = n;
+    }
+
+    Lock lock = new ReentrantLock(true);
+    volatile boolean permitFoo = true;
+
+    public void foo(Runnable printFoo) throws InterruptedException {
+        for (int i = 0; i < n; ) {
+            lock.lock();
+            try {
+              if(permitFoo) {
+                  printFoo.run();
+                    i++;
+                    permitFoo = false;
+              }
+            }finally {
+              lock.unlock();
+            }
+        }
+    }
+
+    public void bar(Runnable printBar) throws InterruptedException {
+        for (int i = 0; i < n; ) {
+            lock.lock();
+            try {
+              if(!permitFoo) {
+                  printBar.run();
+                  i++;
+                  permitFoo = true;
+              }
+            }finally {
+              lock.unlock();
+            }
+        }
+    }
+ }
+```
+
+
+* 无锁，volatile
+  以上的公平锁方案完全可以改造成无锁方案：
+
+```java
+class FooBar {
+    private int n;
+
+    public FooBar(int n) {
+        this.n = n;
+    }
+
+    volatile boolean permitFoo = true;
+
+    public void foo(Runnable printFoo) throws InterruptedException {
+        for (int i = 0; i < n; ) {
+            if (permitFoo) {
+                printFoo.run();
+                i++;
+                permitFoo = false;//下一次一定是要等待其他线程完成修改
+            }
+        }
+    }
+
+    public void bar(Runnable printBar) throws InterruptedException {
+        for (int i = 0; i < n; ) {
+            if (!permitFoo) {
+                printBar.run();
+                i++;
+                permitFoo = true;
+            }
+        }
+    }
+}
+```
+
+
+* CyclicBarrier
+
+  * CyclicBarrier 可以有不止一个栅栏，因为它的栅栏（Barrier）可以重复使用（Cyclic）
+
+    ![img](https://img-blog.csdnimg.cn/img_convert/0dde2d343b11b15140fcfec3ef247eba.png)
+
+  * 在CyclicBarrier类的内部有一个计数器，每个线程在到达屏障点的时候都会**调用await方法将自己阻塞**，此时计数器会减1，当计数器减为0的时候所有因调用await方法而被阻塞的线程将被唤醒。这就是实现**一组线程相互等待的原理**
+  * 在场景一中提过，CyclicBarrier更适合用在循环场景中，那么我们来试一下：
+
+```java
+class FooBar {
+    private int n;
+
+    public FooBar(int n) {
+        this.n = n;
+    }
+
+    CyclicBarrier cb = new CyclicBarrier(2);
+    volatile boolean fin = true;
+
+    public void foo(Runnable printFoo) throws InterruptedException {
+        for (int i = 0; i < n; i++) {
+            while (!fin) ;//自旋等待，必须要加锁否则下一次任然可能是自己抢占了时间片
+            printFoo.run();
+            fin = false;
+            try {
+                cb.await();//阻塞自己，等待其他线程到达屏障点-->到达后进入下一次循环；
+            } catch (BrokenBarrierException e) {
+            }
+        }
+    }
+
+    public void bar(Runnable printBar) throws InterruptedException {
+        for (int i = 0; i < n; i++) {
+            try {
+                cb.await();//阻塞自己，等待其他线程到达屏障点-->到达后执行打印逻辑
+            } catch (BrokenBarrierException e) {
+            }
+            printBar.run();
+            fin = true;//类似于唤醒在自旋的线程
+        }
+    }
+}
+```
+
+
+
+* 阻塞队列BlockingQueue
+
+```java
+public class FooBar {
+    private int n;
+    private BlockingQueue<Integer> bar = new LinkedBlockingQueue<>(1);
+    private BlockingQueue<Integer> foo = new LinkedBlockingQueue<>(1);
+    public FooBar(int n) {
+        this.n = n;
+    }
+    public void foo(Runnable printFoo) throws InterruptedException {
+        for (int i = 0; i < n; i++) {
+            foo.put(i);//在take前都只能阻塞
+            printFoo.run();
+            bar.put(i);
+        }
+    }
+
+    public void bar(Runnable printBar) throws InterruptedException {
+        for (int i = 0; i < n; i++) {
+            bar.take();
+            printBar.run();
+            foo.take();//执行完释放，类似于通知
+        }
+    }
+}
+```
+
+
+
+#### [1188. 设计有限阻塞队列](https://leetcode-cn.com/problems/design-bounded-blocking-queue/)
+
+* synchronized + wait/notify  + 链表
+
+```java
+class BoundedBlockingQueue {
+    //通过链表实现，可以从头结点添加，尾结点删除
+    private LinkedList<Integer> list;
+    private int capacity;
+    private volatile int size;
+
+    Object lock = new Object();
+
+    public BoundedBlockingQueue(int capacity) {
+        this.list = new LinkedList();
+        this.capacity = capacity;
+        this.size = 0;
+    }
+    
+    public void enqueue(int element) throws InterruptedException {
+        synchronized(lock){
+            while(size + 1 > capacity) lock.wait();//自旋等待
+            size++;
+            list.addFirst(element);
+            lock.notify();
+        }
+    }
+    
+    public int dequeue() throws InterruptedException {
+        synchronized(lock){
+           while(size <= 0) lock.wait();//自旋等待 
+           int res = list.removeLast();
+           size--;
+           lock.notify();
+           return res;
+        }
+    }
+    
+    public int size() {
+        return size;
     }
 }
 ```
