@@ -1,4 +1,4 @@
-# 一、**常见运算**
+# **第一章 、常见运算**
 
 ```java
 //取模运算:余数,可以用作循环
@@ -10,7 +10,11 @@ i++ //输出后再加
 
 
 
-# 二、**数组、链表、跳表**
+# 第二章、常用数据结构与算法
+
+
+
+## 一、**数组、链表、跳表**
 
 * 原始数组
 
@@ -57,7 +61,7 @@ i++ //输出后再加
 
   * 升维：增加多级索引Olog(n)；随着增加删除索引索引可能需要重建，空间复杂度O(n)
 
-##1、解题模板
+###1、解题模板
 
 * 遍历
 
@@ -84,7 +88,7 @@ i++ //输出后再加
 
 
 
-## 2、力扣刷题
+### 2、力扣刷题
 
 #### [146. LRU 缓存机制](https://leetcode-cn.com/problems/lru-cache/)
 
@@ -347,9 +351,9 @@ public ListNode mergeTwoLists(ListNode l1, ListNode l2) {
 
 
 
-# 三、树、二叉树、二叉搜索树
+## 三、树、二叉树、二叉搜索树
 
-## 1、 解题模板
+### 1、 解题模板
 
 *  遍历
 
@@ -379,7 +383,7 @@ void traverse(TreeNode root) {
 }
 ```
 
-## 2、力扣刷题
+### 2、力扣刷题
 
 #### [94. 二叉树的中序遍历](https://leetcode-cn.com/problems/binary-tree-inorder-traversal/)
 
@@ -490,12 +494,244 @@ void traverse(TreeNode root) {
 
   
 
-# 四、**栈、队列、优先队列、双端队列**
+## 四、**栈、队列**
 
-## 1、解题模板
+### 1、解题模板
 
-## 2、力扣刷题
+### 2、力扣刷题
 
 
 
-# 五、**哈希表、映射、集合**
+## 五、**哈希表、映射、集合**
+
+
+
+# 第三章、其他相关知识
+
+## 一、多线程
+
+### 1、常用思路
+
+### 2、力扣刷题
+
+#### [1114. 按序打印](https://leetcode-cn.com/problems/print-in-order/)
+
+*我们使用线程等待的方式实现执行屏障，使用释放线程等待的方式实现屏障消除*
+
+* 使用synchronized + wait/notify 实现
+
+  * 锁升级：偏向锁 -> 轻量级锁（自旋锁）->重量级锁 （MarkWord锁标志位）
+
+     * 偏向锁：只有一个线程，无资源竞争，打上线程标签（可重入，偏向于这一个线程）
+
+     * 轻量级锁：大于2个线程产生资源竞争，CAS机制，自旋等待，用户态层面，消耗CPU；
+
+       （自适应自旋，自旋次数大于10或者竞争线程大于多少，JVM优化选择）
+
+    * 重量级锁：需要向操作系统内核申请，开销大，Lock机制，等待，但不浪费CPU
+
+```java
+class Foo {
+    private boolean firstFinish = false;
+    private boolean secondFinish = false;
+    Object lock = new Object();
+  
+    public Foo() {       
+    }
+
+    public void first(Runnable printFirst) throws InterruptedException {
+        synchronized(lock){
+                printFirst.run();
+                firstFinish = true;
+                //通知所有在等待lock的线程
+                lock.notifyAll(); 
+        }      
+    }
+
+    public void second(Runnable printSecond) throws InterruptedException {   
+           synchronized(lock){
+               //当1还未执行结束，则自旋等待,防止出现中途跳出
+               while(!firstFinish){
+                   lock.wait();
+               }
+             while()
+                printSecond.run();
+                secondFinish = true;
+                lock.notifyAll(); 
+            } 
+    }
+
+    public void third(Runnable printThird) throws InterruptedException {  
+           synchronized(lock){
+               //当2还未执行结束则自旋等待
+               while(!secondFinish){
+                   lock.wait();
+               }
+               printThird.run(); 
+            } 
+    }
+}
+```
+
+* volatile实现
+  * 保证可见性，通知其他线程重新从内存中加载缓存数据
+  * 禁止指令重排：字节码层面加标识，jvm层面内存屏障，操作系统Lock
+
+```java
+class Foo {
+  	//保证可见性及禁止指令重排序
+  	volatile int count=1;
+    public Foo() {    
+    }
+    
+    public void first(Runnable printFirst) throws InterruptedException {
+        printFirst.run();
+        count++;
+    }
+
+    public void second(Runnable printSecond) throws InterruptedException {
+      //自旋，volatile更新数据后会通知到其他线程获取最新的值 
+      while (count!=2);
+        printSecond.run();
+        count++;
+    }
+
+    public void third(Runnable printThird) throws InterruptedException {
+      //自旋，volatile更新数据后会通知到其他线程获取最新的值    
+      while (count!=3);
+        printThird.run();
+    }
+}
+```
+
+* Lock+Condition+await()/signall()实现
+
+```java
+class Foo {
+    int num;
+    Lock lock;
+    //精确的通知和唤醒线程
+    Condition condition1, condition2, condition3;
+
+    public Foo() {
+        num = 1;
+        lock = new ReentrantLock();
+        condition1 = lock.newCondition();
+        condition2 = lock.newCondition();
+        condition3 = lock.newCondition();
+    }
+
+    public void first(Runnable printFirst) throws InterruptedException {
+        lock.lock();
+        try {
+          	//自旋等待
+            while (num != 1) {
+                condition1.await();
+            }
+            printFirst.run();
+            num = 2;
+            condition2.signal();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void second(Runnable printSecond) throws InterruptedException {
+        lock.lock();
+        try {
+            while (num != 2) {
+                condition2.await();
+            }
+            printSecond.run();
+            num = 3;
+            condition3.signal();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public void third(Runnable printThird) throws InterruptedException {
+        lock.lock();
+        try {
+            while (num != 3) {
+                condition3.await();
+            }
+            printThird.run();
+            num = 1;
+            condition1.signal();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            lock.unlock();
+        }
+    }
+}
+```
+
+* CountDownLatch(减计数器)实现
+  * 一个线程等待一组线程执行完再执行，等待线程调用await()方法如果计数器未到达0则一直等待，其余线程执行完后调用countDown()方法会把计数器减一；所有需要等待的线程执行完则计数器为0，等待的线程开始执行；
+
+```java
+lass Foo {
+    CountDownLatch a;
+    CountDownLatch b;
+
+    public Foo() {
+        //等待一个线程执行完
+        a = new CountDownLatch(1);
+        b = new CountDownLatch(1);
+    }
+
+    public void first(Runnable printFirst) throws InterruptedException {
+        printFirst.run();
+        a.countDown();//执行完-1
+    }
+
+    public void second(Runnable printSecond) throws InterruptedException {
+        a.await();
+        printSecond.run();
+        b.countDown();
+    }
+
+    public void third(Runnable printThird) throws InterruptedException {
+        b.await();
+        printThird.run();
+    }
+}
+```
+
+* Semaphore(信号量)
+  * Semaphore与CountDownLatch相似，不同的地方在于Semaphore的值被获取到后是可以释放的，并不像CountDownLatch那样一直减到底
+  * 获得Semaphore的线程处理完它的逻辑之后，你就可以调用它的Release()函数将它的**计数器重新加1**，这样其它被阻塞的线程就可以得到调用了
+
+```java
+class Foo {
+    private Semaphore sa;
+    private Semaphore sb;
+    public Foo() {
+        sa = new Semaphore(0);//等待first执行完后再+许可
+        sb = new Semaphore(0);  
+    }
+
+    public void first(Runnable printFirst) throws InterruptedException {
+        printFirst.run();
+        sa.release();//给second加许可，释放一个sa的信号量
+    }
+
+    public void second(Runnable printSecond) throws InterruptedException {
+        sa.acquire();
+        printSecond.run();
+        sb.release();//给third加许可
+    }
+
+    public void third(Runnable printThird) throws InterruptedException {
+        sb.acquire();
+        printThird.run();
+    }
+}
+```
+
