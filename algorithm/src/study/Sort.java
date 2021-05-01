@@ -25,11 +25,12 @@ public class Sort {
     private static void crsort(int[] a) {
         for (int i = 0; i < a.length; i++) {
             for (int j = i; j > 0; j--) {
-                if (a[j] < a[j - 1]) {
+                if ( a[j - 1] > a[j]) {
                     swap(a, j, j - 1);
+                }else {
+                    break;
                 }
             }
-
         }
     }
 
@@ -42,6 +43,7 @@ public class Sort {
     private static void mpsort(int[] a) {
         for (int i = 0; i < a.length; i++) {
             for (int j = 0; j < a.length - i - 1; j++) {
+                //内层循环，升序（如果前一个值比后一个值大，则交换）
                 if (a[j] > a[j + 1]) {
                     swap(a, j, j + 1);
                 }

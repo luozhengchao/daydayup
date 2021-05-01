@@ -1,6 +1,6 @@
 package test;
 
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * @Author luozhengchao
@@ -27,6 +27,28 @@ public class Test04 {
         }
         return res;
 
+    }
+
+
+    public static void main(String[] args) {
+        Queue<Integer> q = new LinkedList<>();
+        q.add(1);
+        q.add(8);
+        q.add(3);
+        System.out.println(q.peek());//1
+        System.out.println(q.poll());
+        System.out.println(q.poll());
+
+        Stack<Integer> s = new Stack();
+        s.push(1);
+        s.push(5);
+        s.push(10);
+        System.out.println(s.peek());
+        System.out.println(s.pop());
+
+        Queue<Integer> qq = new PriorityQueue<>(4, (a1,a2) -> a2 - a1);
+
+        System.out.println(1%2);
     }
 
 }
