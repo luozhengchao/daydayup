@@ -4,3 +4,5 @@
 **/target/
 **rebel*.xml*
 **/.mvn/
+!/admin/.mvn/
+!/admin/HELP.md
