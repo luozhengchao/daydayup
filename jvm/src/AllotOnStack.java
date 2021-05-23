@@ -9,7 +9,7 @@ import java.util.Map;
 public class AllotOnStack {
 
     public static void main(String[] args) {
-
+        System.out.println("a");
     }
 
 }
