@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class WriteFile2 {
 
-    static StringBuffer file1 = new StringBuffer();
+    static StringBuffer file1 = new StringBuffer();`
     static StringBuffer file2 = new StringBuffer();
     static StringBuffer file3 = new StringBuffer();
     static StringBuffer file4 = new StringBuffer();
