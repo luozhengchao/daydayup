@@ -11,4 +11,5 @@ public abstract class ApplicationEvent {
     public ApplicationEvent(Object source) {
         this.timestamp = System.currentTimeMillis();
     }
+
 }
